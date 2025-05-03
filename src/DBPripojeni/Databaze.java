@@ -12,7 +12,6 @@ public class Databaze {
 
     public static Connection getDBPripojeni() {
         if (databaze == null) {
-        	System.out.println("Aktuální pracovní složka je: " + System.getProperty("user.dir"));
             synchronized (Databaze.class) {
                 if (databaze == null) {
                     try {
@@ -27,8 +26,6 @@ public class Databaze {
                                     "prijmeni TEXT NOT NULL, " +
                                     "rokNarozeni INTEGER NOT NULL, " +
                                     "obor TEXT NOT NULL )";
-                            int rv = stmt.executeUpdate(query);
-                            System.out.println("executeUpdate() returned " + rv);
                         }
                         System.out.println("Created database successfully");                                                                                                                                                          
                     } catch (Exception e) {
@@ -41,9 +38,7 @@ public class Databaze {
                                "uzivatel_id INTEGER NOT NULL, " +
                                "znamka INTEGER NOT NULL, " +
                                "FOREIGN KEY (uzivatel_id) REFERENCES uzivatel(ID))";
-                	   int rv2 = stmt.executeUpdate(query1);
-                       System.out.println("Vytvoření tabulky znamky: executeUpdate() returned " + rv2);
-                       System.out.println("Created database successfully");
+                      
                    }catch (Exception e) {
                        e.printStackTrace();
                        System.exit(0);

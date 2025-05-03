@@ -45,19 +45,19 @@ public int vlozeniuzivatele(String jmeno, String prijmeni, int rokNarozeni, Stri
         prStmt.executeUpdate();
         System.out.println("Nový uživatel: " + jmeno + " byl úspěšně vložen do databáze.");
 
-        // Získání vygenerovaného ID
+        
         try (ResultSet rs = prStmt.getGeneratedKeys()) {
             if (rs.next()) {
                 int noveId = rs.getInt(1);
                 System.out.println("ID nového uživatele: " + noveId);
-                return noveId;  // vrátí ID nového studenta
+                return noveId;  
             }
         }
     } catch (SQLException e) {
         System.out.println("Chyba při vkládání uživatele: " + e.getMessage());
     }
 
-    return -1; // Pokud se nepodařilo vložit
+    return -1; 
 }
 
 
@@ -80,7 +80,7 @@ public void pridejZnamku(int uzivatelId, int znamka) throws SQLException {
 
 
 
-//vypis studentu s idčkama
+
 public void vypisStudenty() throws SQLException{
 	Connection conn = Databaze.getDBPripojeni();
 	String sql = "SELECT * FROM uzivatel";
@@ -111,18 +111,18 @@ public void vypisStudenty() throws SQLException{
 
 }
 
-//mazaní studentu
+
 public void smazaniStudenta(int uzivatelId) throws SQLException {
     Connection conn = Databaze.getDBPripojeni();
 
-    // Nejprve smažeme všechny známky, které patří uživateli (kvůli cizím klíčům)
+
     String deleteZnamky = "DELETE FROM znamky WHERE uzivatel_id = ?";
     try (PreparedStatement pstmtZnamky = conn.prepareStatement(deleteZnamky)) {
         pstmtZnamky.setInt(1, uzivatelId);
         pstmtZnamky.executeUpdate();
     }
 
-    // Pak smažeme samotného uživatele
+
     String deleteUzivatel = "DELETE FROM uzivatel WHERE ID = ?";
     try (PreparedStatement pstmtUzivatel = conn.prepareStatement(deleteUzivatel)) {
         pstmtUzivatel.setInt(1, uzivatelId);
@@ -136,15 +136,15 @@ public void smazaniStudenta(int uzivatelId) throws SQLException {
     }
 }
 
-//samotné funkce morseovky a hashe
+
 
 
 public static String prevedNaMorseovku(String text) {
     String abeceda = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
     String[] morse = {
-        ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", // A-I
-        ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", // J-R
-        "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", "|" // S-Z + mezera
+        ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..",
+        ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", 
+        "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", "|" 
     };
 
     text = text.toUpperCase();
@@ -177,7 +177,6 @@ public static String vytvorHash(String text) {
 
 
 
-//vyběr studenta podle jejich ID a skupiny a následný převod příjmení a jména MORSE
 
 
 
@@ -197,10 +196,10 @@ public static void spustDovednostStudenta(int id) {
             String obor = rs.getString("obor");
 
             String vysledek;
-            if (obor.equalsIgnoreCase("Telekomunikace")) {
+            if (obor.equalsIgnoreCase("tli")) {
                 vysledek = prevedNaMorseovku(jmeno + " " + prijmeni);
                 System.out.println("Dovednost (Morseovka): " + vysledek);
-            } else if (obor.equalsIgnoreCase("Kyberbezpečnost")) {
+            } else if (obor.equalsIgnoreCase("kb")) {
                 vysledek = vytvorHash(jmeno + prijmeni);
                 System.out.println("Dovednost (Hash): " + vysledek);
             } else {
@@ -245,7 +244,118 @@ public void vypisStudentyTliKbSerazene() throws SQLException {
     }
 }
 
+public void vypocitejPrumerZnámek() {
+    Connection conn = Databaze.getDBPripojeni();
+    String sql = "SELECT AVG(znamka) AS prumer FROM znamky";
 
+    try (PreparedStatement prStmt = conn.prepareStatement(sql);
+         ResultSet rs = prStmt.executeQuery()) {
 
+        if (rs.next()) {
+            double prumer = rs.getDouble("prumer");
+            System.out.printf("Průměr všech známek: %.2f%n", prumer);
+        } else {
+            System.out.println("Nebyla nalezena žádná známka.");
+        }
 
+    } catch (SQLException e) {
+        System.out.println("Chyba při výpočtu průměru známek: " + e.getMessage());
+    }
+}
+
+public void vypisPocetStudentu() {
+    Connection conn = Databaze.getDBPripojeni();
+    String sql = "SELECT COUNT(*) AS pocet FROM uzivatel";
+
+    try (PreparedStatement prStmt = conn.prepareStatement(sql);
+         ResultSet rs = prStmt.executeQuery()) {
+
+        if (rs.next()) {
+            int pocet = rs.getInt("pocet");
+            System.out.println("Celkový počet studentů: " + pocet);
+        } else {
+            System.out.println("Nepodařilo se načíst počet studentů.");
+        }
+
+    } catch (SQLException e) {
+        System.out.println("Chyba při výpočtu počtu studentů: " + e.getMessage());
+    }
+}
+
+public void vypisPocetStudentuVeSkupinach() {
+    Connection conn = Databaze.getDBPripojeni();
+    String sql = "SELECT LOWER(obor) AS obor, COUNT(*) AS pocet " +
+                 "FROM uzivatel " +
+                 "WHERE LOWER(obor) IN ('tli', 'kb') " +
+                 "GROUP BY LOWER(obor)";
+
+    try (PreparedStatement prStmt = conn.prepareStatement(sql);
+         ResultSet rs = prStmt.executeQuery()) {
+
+        System.out.println("Počet studentů v jednotlivých skupinách:");
+        System.out.println("-----------------------------------------");
+
+        while (rs.next()) {
+            String obor = rs.getString("obor").toUpperCase();
+            int pocet = rs.getInt("pocet");
+            System.out.println("Skupina: " + obor + " – " + pocet + " studentů");
+        }
+
+        System.out.println("-----------------------------------------");
+
+    } catch (SQLException e) {
+        System.out.println("Chyba při výpisu počtu studentů ve skupinách: " + e.getMessage());
+    }
+    }
+    public void ulozStudentaDoSouboru(int idStudenta, String nazevSouboru) {
+        Connection conn = Databaze.getDBPripojeni();
+        String sql = "SELECT * FROM uzivatel WHERE id = ?";
+
+        try (PreparedStatement prStmt = conn.prepareStatement(sql)) {
+            prStmt.setInt(1, idStudenta);
+            ResultSet rs = prStmt.executeQuery();
+
+            if (rs.next()) {
+                String jmeno = rs.getString("jmeno");
+                String prijmeni = rs.getString("prijmeni");
+                int rok = rs.getInt("rokNarozeni");
+                String obor = rs.getString("obor");
+
+                try (java.io.PrintWriter writer = new java.io.PrintWriter(nazevSouboru)) {
+                    writer.println("ID: " + idStudenta);
+                    writer.println("Jméno: " + jmeno);
+                    writer.println("Příjmení: " + prijmeni);
+                    writer.println("Rok narození: " + rok);
+                    writer.println("Obor: " + obor);
+                    System.out.println("Student byl uložen do souboru " + nazevSouboru);
+                } catch (java.io.IOException e) {
+                    System.out.println("Chyba při zápisu do souboru: " + e.getMessage());
+                }
+
+            } else {
+                System.out.println("Student s ID " + idStudenta + " nebyl nalezen.");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Chyba při načítání studenta: " + e.getMessage());
+        }
+    
+
+}
+
+    
+    
+    public void nactiStudentaZeSouboru(String nazevSouboru) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(nazevSouboru))) {
+            System.out.println("Načtený student ze souboru:");
+            System.out.println("---------------------------");
+            String radek;
+            while ((radek = reader.readLine()) != null) {
+                System.out.println(radek);
+            }
+            System.out.println("---------------------------");
+        } catch (java.io.IOException e) {
+            System.out.println("Chyba při načítání souboru: " + e.getMessage());
+        }
+    }
 }
